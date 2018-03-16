@@ -2,4 +2,4 @@
 #include <stdio.h>
 
 void* halloc(size_t size);
-void* hfree(void* dest);
+void hfree(void* dest);

@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <assert.h>
+
+#define __DEBUG__
+
+//global variable
+void* firstBlock = NULL;
 
 //private structs
 typedef struct{
@@ -19,22 +25,19 @@ size_t getRealSize(beginStruct* ptr);
 void setFreeSize(beginStruct* ptr);
 void setRealSize(beginStruct* ptr);
 void* requestBlock(size_t size);
-beginStruct* findFree();
+void* findFree(size_t size);
+void splitBlock(void* ptr, size_t size);
+void* getNextBlock(void* ptr);
 
 //test function
 void test()
 {
-	int* xd = (int*)halloc(400);
-	*xd = 5;
-	*(xd+1) = 6;
-	printf("%d, %d", *xd, *(xd+1));
-	hfree(xd);
 }
 
 //TODO first look for free block, then request new one
 void* halloc(size_t size)
 {
-	void* ptr = requestBlock(size+sizeof(beginStruct)+sizeof(endStruct));
+	void* ptr = requestBlock(size);
 	if(!ptr)
 		return NULL;
 	if(!initBlock(ptr, size))
@@ -72,10 +75,45 @@ int initBlock(void* ptr, size_t size)
 //request memory from kernel
 void* requestBlock(size_t size)
 {
-	void* ptr = sbrk(size);
+	void* ptr = sbrk(size+sizeof(endStruct)+sizeof(beginStruct));
 	if(ptr == (void*)-1)
 		return NULL;
+	if(!firstBlock)
+		firstBlock = ptr;
+#ifdef __DEBUG__
+	printf("ALLOCATE ADRESS:\nST: %p\nEND: %p\n",ptr, sbrk(0));
+#endif
 	return ptr;
+}
+
+void splitBlock(void* ptr, size_t size)
+{
+	beginStruct* block1 = ptr;
+	beginStruct* block2 = ptr + size + sizeof(endStruct) + sizeof(beginStruct);
+	initBlock(block2, block1->size - size - 
+			sizeof(endStruct) - sizeof(beginStruct));
+	initBlock(block1, size);
+#ifdef __DEBUG__
+	printf("b1: %p\nb2: %p\n", block1, block2);
+#endif
+}
+
+void* findFree(size_t size)
+{
+	assert(firstBlock != NULL);
+	beginStruct* block = firstBlock;
+	void* memoryEnd = sbrk(0);
+	do{
+		if(block->size >= size)
+			return block;
+	} while((block = getNextBlock(block)) != memoryEnd);
+	return NULL;
+}
+
+void* getNextBlock(void* ptr)
+{
+	return ptr+getRealSize(ptr)+
+		sizeof(endStruct)+sizeof(beginStruct);
 }
 
 int isBlockFree(beginStruct* ptr)

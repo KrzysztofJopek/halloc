@@ -60,13 +60,10 @@ void hfree(void* ptr)
 //Init block with begin and end structures;
 int initBlock(void* ptr, size_t size)
 {
-	if(!ptr || size <= sizeof(beginStruct)+sizeof(endStruct))
-		return 0;
-
 	beginStruct* bgSt = (beginStruct*)ptr;
-	endStruct* enSt = ptr+size-sizeof(endStruct);
+	endStruct* enSt = ptr+size+sizeof(beginStruct);
 
-	bgSt->size = size-sizeof(beginStruct)-sizeof(endStruct);
+	bgSt->size = size;
 	enSt->ptr = bgSt;
 
 	setFreeSize(ptr);
@@ -90,12 +87,12 @@ void* requestBlock(size_t size)
 void splitBlock(void* ptr, size_t size)
 {
 	beginStruct* block1 = ptr;
-	beginStruct* block2 = getNextBlock(ptr);
+	beginStruct* block2 = ptr+getFullSize(size);
 	initBlock(block2, block1->size - size - 
 			sizeof(endStruct) - sizeof(beginStruct));
 	initBlock(block1, size);
 #ifdef __DEBUG__
-	printf("b1: %p\nb2: %p\n", block1, block2);
+	printf("SPLITBLOCKS:\n b1: %p\n b2: %p\n", block1, block2);
 #endif
 }
 

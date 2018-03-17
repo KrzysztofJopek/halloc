@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <assert.h>
 
-#define __DEBUG__
+//#define __DEBUG__
 
 //global variable
 void* firstBlock = NULL;
@@ -69,8 +69,10 @@ void hfree(void* ptr)
 	if(isBlockFree(ptr))
 		return;
 	setFreeSize(ptr);
-	mergeBlocks(ptr);
-	mergeBlocks(getPreviousBlock(ptr));
+	if(getNextBlock(ptr)!=endMem)
+		mergeBlocks(ptr);
+	if(ptr != firstBlock)
+		mergeBlocks(getPreviousBlock(ptr));
 }
 
 //Init block with begin and end structures;
@@ -97,6 +99,7 @@ void* requestBlock(size_t size)
 	endMem = ptr+size;
 #ifdef __DEBUG__
 	printf("ALLOCATE ADRESS:\nST: %p\nEND: %p\n",ptr, sbrk(0));
+	fflush(stdout);
 #endif
 	return ptr;
 }
@@ -127,12 +130,13 @@ void* findFree(size_t size)
 void mergeBlocks(void* pB1)
 {
 	void* nextBlock = getNextBlock(pB1);
-	if(nextBlock == endMem)
-		return;
-	if(isBlockFree(nextBlock)){
+	if(isBlockFree(nextBlock)&&isBlockFree(pB1)){
+		setRealSize(pB1);
+		setRealSize(nextBlock);
 		((endStruct*)(nextBlock+sizeof(beginStruct)+
 			getRealSize(nextBlock)))->ptr = pB1;
 		((beginStruct*)pB1)->size += getFullSize(((beginStruct*)nextBlock)->size);
+		setFreeSize(pB1);
 	}
 }
 

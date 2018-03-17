@@ -28,6 +28,7 @@ void* requestBlock(size_t size);
 void* findFree(size_t size);
 void splitBlock(void* ptr, size_t size);
 void* getNextBlock(void* ptr);
+size_t getFullSize(size_t size);
 
 //test function
 void test()
@@ -75,7 +76,7 @@ int initBlock(void* ptr, size_t size)
 //request memory from kernel
 void* requestBlock(size_t size)
 {
-	void* ptr = sbrk(size+sizeof(endStruct)+sizeof(beginStruct));
+	void* ptr = sbrk(getFullSize(size));
 	if(ptr == (void*)-1)
 		return NULL;
 	if(!firstBlock)
@@ -89,7 +90,7 @@ void* requestBlock(size_t size)
 void splitBlock(void* ptr, size_t size)
 {
 	beginStruct* block1 = ptr;
-	beginStruct* block2 = ptr + size + sizeof(endStruct) + sizeof(beginStruct);
+	beginStruct* block2 = getNextBlock(ptr);
 	initBlock(block2, block1->size - size - 
 			sizeof(endStruct) - sizeof(beginStruct));
 	initBlock(block1, size);
@@ -114,6 +115,11 @@ void* getNextBlock(void* ptr)
 {
 	return ptr+getRealSize(ptr)+
 		sizeof(endStruct)+sizeof(beginStruct);
+}
+
+size_t getFullSize(size_t size)
+{
+	return size + sizeof(endStruct) + sizeof(beginStruct);
 }
 
 int isBlockFree(beginStruct* ptr)

@@ -5,6 +5,7 @@
 #include <assert.h>
 
 //#define __DEBUG__
+#define SMALLESTBLOCK 16
 
 //global variable
 void* firstBlock = NULL;
@@ -33,12 +34,7 @@ void* getPreviousBlock(void* ptr);
 size_t getFullSize(size_t size);
 void mergeBlocks(void* pB1);
 
-//test function
-void test()
-{
-}
 
-//TODO first look for free block, then request new one
 void* halloc(size_t size)
 {
 	//allocate only even size
@@ -48,7 +44,8 @@ void* halloc(size_t size)
 	if(firstBlock != NULL){
 		ptr = findFree(getFullSize(size));
 		if(ptr != NULL){
-			setRealSize(ptr);
+			if(((beginStruct*)ptr)->size >= getFullSize(SMALLESTBLOCK))
+				splitBlock(ptr, size);
 			return ptr + sizeof(beginStruct);
 		}
 	}

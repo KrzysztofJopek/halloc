@@ -37,6 +37,8 @@ void mergeBlocks(void* pB1);
 
 void* halloc(size_t size)
 {
+	if(size<=0)
+		return NULL;
 	//allocate only even size
 	if(size%2)
 		size++;

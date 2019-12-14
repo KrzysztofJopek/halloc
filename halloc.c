@@ -7,9 +7,8 @@
 //#define __DEBUG__
 #define SMALLESTBLOCK 16
 
-//global variable
-void* firstBlock = NULL;
-void* endMem = NULL;
+static void* firstBlock = NULL;
+static void* endMem = NULL;
 
 //private structs
 typedef struct{
@@ -21,18 +20,18 @@ typedef struct{
 }endStruct;
 
 //private functions
-int initBlock(void* ptr, size_t size);
-int isBlockFree(beginStruct* location);
-size_t getRealSize(beginStruct* ptr);
-void setFreeSize(beginStruct* ptr);
-void setRealSize(beginStruct* ptr);
-void* requestBlock(size_t size);
-void* findFree(size_t size);
-void splitBlock(void* ptr, size_t size);
-void* getNextBlock(void* ptr);
-void* getPreviousBlock(void* ptr);
-size_t getFullSize(size_t size);
-void mergeBlocks(void* pB1);
+static int initBlock(void* ptr, size_t size);
+static int isBlockFree(beginStruct* location);
+static size_t getRealSize(beginStruct* ptr);
+static void setFreeSize(beginStruct* ptr);
+static void setRealSize(beginStruct* ptr);
+static void* requestBlock(size_t size);
+static void* findFree(size_t size);
+static void splitBlock(void* ptr, size_t size);
+static void* getNextBlock(void* ptr);
+static void* getPreviousBlock(void* ptr);
+static size_t getFullSize(size_t size);
+static void mergeBlocks(void* pB1);
 
 
 void* halloc(size_t size)
@@ -75,7 +74,7 @@ void hfree(void* ptr)
 }
 
 //Init block with begin and end structures;
-int initBlock(void* ptr, size_t size)
+static int initBlock(void* ptr, size_t size)
 {
 	beginStruct* bgSt = (beginStruct*)ptr;
 	endStruct* enSt = ptr+size+sizeof(beginStruct);
@@ -88,7 +87,7 @@ int initBlock(void* ptr, size_t size)
 }
 
 //request memory from kernel
-void* requestBlock(size_t size)
+static void* requestBlock(size_t size)
 {
 	void* ptr = sbrk(size);
 	if(ptr == (void*)-1)
@@ -103,7 +102,7 @@ void* requestBlock(size_t size)
 	return ptr;
 }
 
-void splitBlock(void* ptr, size_t size)
+static void splitBlock(void* ptr, size_t size)
 {
 	beginStruct* block1 = ptr;
 	beginStruct* block2 = ptr+getFullSize(size);
@@ -115,7 +114,7 @@ void splitBlock(void* ptr, size_t size)
 #endif
 }
 
-void* findFree(size_t size)
+static void* findFree(size_t size)
 {
 	assert(firstBlock != NULL);
 	beginStruct* block = firstBlock;
@@ -126,7 +125,7 @@ void* findFree(size_t size)
 	return NULL;
 }
 
-void mergeBlocks(void* pB1)
+static void mergeBlocks(void* pB1)
 {
 	void* nextBlock = getNextBlock(pB1);
 	if(isBlockFree(nextBlock)&&isBlockFree(pB1)){
@@ -139,38 +138,38 @@ void mergeBlocks(void* pB1)
 	}
 }
 
-void* getNextBlock(void* ptr)
+static void* getNextBlock(void* ptr)
 {
 	return ptr+getRealSize(ptr)+
 		sizeof(endStruct)+sizeof(beginStruct);
 }
 
-void* getPreviousBlock(void* ptr)
+static void* getPreviousBlock(void* ptr)
 {
 	return ((endStruct*)(ptr-sizeof(endStruct)))->ptr;
 }
 
-size_t getFullSize(size_t size)
+static size_t getFullSize(size_t size)
 {
 	return size + sizeof(endStruct) + sizeof(beginStruct);
 }
 
-int isBlockFree(beginStruct* ptr)
+static int isBlockFree(beginStruct* ptr)
 {
 	return ptr->size & 1;
 }
 
-size_t getRealSize(beginStruct* ptr)
+static size_t getRealSize(beginStruct* ptr)
 {
 	return (ptr->size & ~1);
 }
 
-void setRealSize(beginStruct* ptr)
+static void setRealSize(beginStruct* ptr)
 {
 	ptr->size = ptr->size & ~1;
 }
 
-void setFreeSize(beginStruct* ptr)
+static void setFreeSize(beginStruct* ptr)
 {
 	ptr->size = ptr->size | 1;
 }
